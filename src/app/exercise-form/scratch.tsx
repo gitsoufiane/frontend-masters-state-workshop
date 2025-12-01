@@ -9,6 +9,7 @@ const submitAction = async (formData: FormData) => {
 function Form() {
   const [state, formAction, isPending] = useActionState(submitAction, null);
 
+  console.log({state})
   if (isPending) {
     return <p>Loading...</p>;
   }

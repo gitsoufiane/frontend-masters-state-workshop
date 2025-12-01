@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Combobox } from '@/components/combobox';
 import { locations } from '@/app/locations';
-import { submitTravelDataBasic, type TravelData } from './actions';
+import { FormState, submitTravelData, submitTravelDataBasic, type TravelData } from './actions';
 import { CheckCircle } from 'lucide-react';
 
 const seatPreferences = [
@@ -32,67 +32,26 @@ type TravelFormData = {
   seatPreference: string;
 };
 
+const initialSTate:FormState={
+  status:'idle',
+  errors: {},
+  data: null
+}
 export default function TravelFormPage() {
-  // Form data state
-  const [formData, setFormData] = useState<TravelFormData>({
-    firstName: '',
-    lastName: '',
-    birthdate: '',
-    passport: '',
-    originCity: '',
-    seatPreference: '',
-  });
+  const [state, formAction, isPending] = React.useActionState(submitTravelData,initialSTate);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [successData, setSuccessData] = useState<TravelData | null>(null);
+  console.log({isPending,state})
 
-  const updateFormField = (field: keyof TravelFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: '' }));
-    }
-  };
 
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const isSubmitting = state.status==='pending'
+  const isSuccess = state.status==='success'
+  const successData = state.data
+  const errors = state.errors
 
-    setIsSubmitting(true);
-    setErrors({});
 
-    try {
-      // Call simplified server action directly with form data
-      const result = await submitTravelDataBasic(formData);
 
-      if (result.status === 'success') {
-        setIsSuccess(true);
-        setSuccessData(result.data);
-      } else if (result.status === 'error') {
-        setErrors(result.errors);
-      }
-    } catch {
-      setErrors({ general: 'An unexpected error occurred. Please try again.' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
-  // Reset form
-  const handleReset = () => {
-    setFormData({
-      firstName: '',
-      lastName: '',
-      birthdate: '',
-      passport: '',
-      originCity: '',
-      seatPreference: '',
-    });
-    setIsSuccess(false);
-    setSuccessData(null);
-    setErrors({});
-  };
+
 
   // Success screen
   if (isSuccess && successData) {
@@ -146,7 +105,7 @@ export default function TravelFormPage() {
                 </div>
               </div>
             </div>
-            <Button onClick={handleReset} className="w-full" variant="outline">
+            <Button onClick={()=>null} className="w-full" variant="outline">
               Submit Another Form
             </Button>
           </CardContent>
@@ -165,7 +124,7 @@ export default function TravelFormPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form action={formAction}  className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name *</Label>
@@ -173,8 +132,6 @@ export default function TravelFormPage() {
                   id="firstName"
                   name="firstName"
                   type="text"
-                  value={formData.firstName}
-                  onChange={(e) => updateFormField('firstName', e.target.value)}
                   placeholder="Enter your first name"
                   aria-invalid={errors.firstName ? 'true' : 'false'}
                   disabled={isSubmitting}
@@ -192,8 +149,6 @@ export default function TravelFormPage() {
                   id="lastName"
                   name="lastName"
                   type="text"
-                  value={formData.lastName}
-                  onChange={(e) => updateFormField('lastName', e.target.value)}
                   placeholder="Enter your last name"
                   aria-invalid={errors.lastName ? 'true' : 'false'}
                   disabled={isSubmitting}
@@ -212,8 +167,6 @@ export default function TravelFormPage() {
                 id="birthdate"
                 name="birthdate"
                 type="date"
-                value={formData.birthdate}
-                onChange={(e) => updateFormField('birthdate', e.target.value)}
                 aria-invalid={errors.birthdate ? 'true' : 'false'}
                 disabled={isSubmitting}
               />
@@ -230,8 +183,6 @@ export default function TravelFormPage() {
                 id="passport"
                 name="passport"
                 type="text"
-                value={formData.passport}
-                onChange={(e) => updateFormField('passport', e.target.value)}
                 placeholder="Enter your passport number"
                 aria-invalid={errors.passport ? 'true' : 'false'}
                 disabled={isSubmitting}
@@ -247,10 +198,6 @@ export default function TravelFormPage() {
               <Label htmlFor="originCity">Origin City *</Label>
               <Combobox
                 options={locations}
-                value={formData.originCity}
-                onChange={(value: string) =>
-                  updateFormField('originCity', value)
-                }
                 name="originCity"
                 placeholder="Select your departure city"
               />
@@ -265,10 +212,6 @@ export default function TravelFormPage() {
               <Label htmlFor="seatPreference">Seat Preference *</Label>
               <Combobox
                 options={seatPreferences}
-                value={formData.seatPreference}
-                onChange={(value: string) =>
-                  updateFormField('seatPreference', value)
-                }
                 name="seatPreference"
                 placeholder="Select your seat preference"
               />

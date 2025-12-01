@@ -180,17 +180,18 @@ function TripStatus() {
   const [status, setStatus] = useState('');
 
   // This effect is unnecessary - we can derive status
-  useEffect(() => {
+  const getStatus = () => {
     const today = new Date();
     const start = new Date(trip.startDate);
     const end = new Date(trip.endDate);
+    
+    if (!trip.isPaid) return 'Payment Pending';
+    else if (!trip.isConfirmed) return 'Awaiting Confirmation';
+    else if (today < start) return 'Upcoming';
+    else if (today >= start && today <= end) return 'In Progress';
+    else return 'Completed';
+  }
 
-    if (!trip.isPaid) setStatus('Payment Pending');
-    else if (!trip.isConfirmed) setStatus('Awaiting Confirmation');
-    else if (today < start) setStatus('Upcoming');
-    else if (today >= start && today <= end) setStatus('In Progress');
-    else setStatus('Completed');
-  }, [trip]);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -220,7 +221,7 @@ function TripStatus() {
       <CardContent>
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Current Status:</span>
-          <Badge variant={getStatusVariant(status)} className="text-sm">
+          <Badge variant={getStatusVariant(getStatus())} className="text-sm">
             {status}
           </Badge>
         </div>
@@ -238,16 +239,11 @@ function SearchResults() {
     { id: 3, name: 'City Hotel', price: 180, rating: 4.7 },
   ]);
   const [sortBy, setSortBy] = useState('price');
-  const [sortedResults, setSortedResults] = useState<typeof searchResults>([]);
-
-  // This effect is unnecessary - we can derive sorted results
-  useEffect(() => {
-    const sorted = [...searchResults].sort((a, b) => {
+  const sortedResults = [...searchResults].sort((a, b) => {
       if (sortBy === 'price') return a.price - b.price;
       return b.rating - a.rating;
     });
-    setSortedResults(sorted);
-  }, [searchResults, sortBy]);
+
 
   return (
     <Card>
